@@ -46,6 +46,14 @@ export const videoEarning = async (req: Request, res: Response) => {
     const subscriberCount =
       channelInfo?.data?.items[0]?.statistics?.subscriberCount;
 
+    const uploadOn = new Date(videoInfo?.snippet?.publishedAt);
+    const formattedDate = uploadOn.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    // console.log(formattedDate);
+
     const { commentCount, likeCount, viewCount } = stats;
 
     const earning =
@@ -53,12 +61,12 @@ export const videoEarning = async (req: Request, res: Response) => {
       10 * +commentCount +
       5 * +likeCount;
 
-    const videoEntry = await getVideoById(vId);
+    let videoEntry = await getVideoById(vId);
 
     //Creating entry in the mongoDb
 
     if (!videoEntry) {
-      await createVideo({
+      videoEntry = await createVideo({
         videoId: vId,
         channelId: channelId,
         like: likeCount,
@@ -68,9 +76,10 @@ export const videoEarning = async (req: Request, res: Response) => {
         thumbnail: videoInfo?.snippet?.thumbnails?.high?.url,
         subscriber: subscriberCount,
         earnings: earning,
+        uploadOn: formattedDate,
       });
     } else {
-      await updateVideoById(videoEntry.id, {
+      videoEntry = await updateVideoById(videoEntry.id, {
         videoId: vId,
         channelId: channelId,
         like: likeCount,
@@ -80,6 +89,7 @@ export const videoEarning = async (req: Request, res: Response) => {
         thumbnail: videoInfo?.snippet?.thumbnails?.high?.url,
         subscriber: subscriberCount,
         earnings: earning,
+        uploadOn: formattedDate,
       });
     }
 
@@ -87,13 +97,7 @@ export const videoEarning = async (req: Request, res: Response) => {
 
     const isTop = videoList[0].videoId == vId;
 
-    const payload = {
-      thumbnail: videoInfo?.snippet?.thumbnails?.high?.url,
-      title: videoInfo?.snippet?.title,
-      ...videoInfo?.statistics,
-      earning: earning,
-      isTop,
-    };
+    const payload = videoEntry;
 
     return res.json({
       data: {

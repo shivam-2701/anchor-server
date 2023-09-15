@@ -37,6 +37,10 @@ const videoSchema = new Schema({
     type: Number,
     required: true,
   },
+  uploadOn: {
+    type: String,
+    required: true,
+  },
 });
 
 export const VideoModel = mongoose.model("Video", videoSchema);
